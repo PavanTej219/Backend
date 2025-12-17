@@ -2,13 +2,20 @@ beautifulsoup4
 easyocr
 fastapi
 groq
-llama_index
+llama-index
+llama-index-core
+llama-index-embeddings-huggingface
+llama-index-llms-groq
+llama-index-vector-stores-qdrant
 numpy
 opencv-python-headless
 Pillow
 pydantic
 python-dotenv
-qdrant_client
+qdrant-client
 requests
 uvicorn
 torch --index-url https://download.pytorch.org/whl/cpu
+torchvision
+sentence-transformers
+transformers
