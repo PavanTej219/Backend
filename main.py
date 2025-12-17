@@ -1421,7 +1421,7 @@ async def find_doctors(request: DoctorSearchRequest):
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Error searching for doctors: {str(e)}")
 
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+# if __name__ == "__main__":
+#     import uvicorn
+#     port = int(os.getenv("PORT", 8000))
+#     uvicorn.run(app, host="0.0.0.0", port=port)
