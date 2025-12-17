@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Model Architecture Comparison</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: black;
+        }
+        h2 {
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: black;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+            border: 2px solid black;
+            background-color: white;
+        }
+        th {
+            border: 1px solid black;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+            background-color: white;
+            color: black;
+        }
+        td {
+            border: 1px solid black;
+            padding: 12px;
+            text-align: left;
+            color: black;
+            background-color: white;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hybrid Model Architecture Advantages Comparison</h1>
+<h2>Main Comparison: Hybrid (CNN + ViT + SSM) vs Pure Architectures</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Aspect</th>
+            <th>Pure CNN</th>
+            <th>Pure ViT</th>
+            <th>Pure SSM</th>
+            <th>Hybrid (CNN+ViT+SSM)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Local Feature Extraction</strong></td>
+            <td>Excellent - Native convolution operations</td>
+            <td>Poor - Requires fine-tuning or local attention</td>
+            <td>Limited - Sequential processing</td>
+            <td>Excellent - Leverages CNN component</td>
+        </tr>
+        <tr>
+            <td><strong>Global Context Modeling</strong></td>
+            <td>Limited - Restricted by receptive field</td>
+            <td>Excellent - Self-attention across patches</td>
+            <td>Good - State space propagation</td>
+            <td>Excellent - ViT + SSM components</td>
+        </tr>
+        <tr>
+            <td><strong>Long-Range Dependencies</strong></td>
+            <td>Poor - Requires deep stacking</td>
+            <td>Excellent - Quadratic attention</td>
+            <td>Excellent - Linear complexity</td>
+            <td>Excellent - Best of ViT and SSM</td>
+        </tr>
+        <tr>
+            <td><strong>Computational Efficiency</strong></td>
+            <td>High - O(n) operations</td>
+            <td>Low - O(n²) self-attention</td>
+            <td>Very High - O(n) complexity</td>
+            <td>Optimized - Balanced approach</td>
+        </tr>
+        <tr>
+            <td><strong>Data Requirements</strong></td>
+            <td>Moderate - Strong inductive bias</td>
+            <td>Very High - Needs large datasets</td>
+            <td>Moderate-High</td>
+            <td>Moderate - Combined inductive biases</td>
+        </tr>
+        <tr>
+            <td><strong>Parameter Efficiency</strong></td>
+            <td>Good - Shared kernels</td>
+            <td>Moderate - Large embedding layers</td>
+            <td>Good - Efficient state representation</td>
+            <td>Excellent - Optimized combination</td>
+        </tr>
+        <tr>
+            <td><strong>Translation Invariance</strong></td>
+            <td>Native property</td>
+            <td>Must be learned</td>
+            <td>Must be learned</td>
+            <td>Inherited from CNN</td>
+        </tr>
+        <tr>
+            <td><strong>Scalability to High-Resolution</strong></td>
+            <td>Good - Local operations</td>
+            <td>Poor - Quadratic memory growth</td>
+            <td>Excellent - Linear scaling</td>
+            <td>Excellent - Multi-scale handling</td>
+        </tr>
+        <tr>
+            <td><strong>Sequential Processing</strong></td>
+            <td>Not designed for it</td>
+            <td>Limited - Position embeddings</td>
+            <td>Native capability</td>
+            <td>Strong - SSM component</td>
+        </tr>
+        <tr>
+            <td><strong>Training Stability</strong></td>
+            <td>Stable - Well-understood</td>
+            <td>Requires careful tuning</td>
+            <td>Can be challenging</td>
+            <td>Stable - Complementary components</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Flexibility Across Tasks</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Task Type</th>
+            <th>Pure CNN</th>
+            <th>Pure ViT</th>
+            <th>Pure SSM</th>
+            <th>Hybrid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Image Classification</strong></td>
+            <td>Very Good</td>
+            <td>Excellent</td>
+            <td>Good</td>
+            <td>Excellent</td>
+        </tr>
+        <tr>
+            <td><strong>Object Detection</strong></td>
+            <td>Excellent</td>
+            <td>Good</td>
+            <td>Moderate</td>
+            <td>Excellent</td>
+        </tr>
+        <tr>
+            <td><strong>Semantic Segmentation</strong></td>
+            <td>Excellent</td>
+            <td>Very Good</td>
+            <td>Moderate</td>
+            <td>Excellent</td>
+        </tr>
+        <tr>
+            <td><strong>Video Understanding</strong></td>
+            <td>Moderate</td>
+            <td>Good</td>
+            <td>Very Good</td>
+            <td>Excellent</td>
+        </tr>
+        <tr>
+            <td><strong>Fine-grained Recognition</strong></td>
+            <td>Good</td>
+            <td>Excellent</td>
+            <td>Moderate</td>
+            <td>Excellent</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Computational Complexity Comparison</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Metric</th>
+            <th>Pure CNN</th>
+            <th>Pure ViT</th>
+            <th>Pure SSM</th>
+            <th>Hybrid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Time Complexity</strong></td>
+            <td>O(n)</td>
+            <td>O(n²)</td>
+            <td>O(n)</td>
+            <td>O(n) with rich features</td>
+        </tr>
+        <tr>
+            <td><strong>Memory Consumption</strong></td>
+            <td>Moderate</td>
+            <td>High (attention matrices)</td>
+            <td>Low</td>
+            <td>Optimized selective usage</td>
+        </tr>
+        <tr>
+            <td><strong>Inference Speed</strong></td>
+            <td>Fast</td>
+            <td>Slow for high-res</td>
+            <td>Very Fast</td>
+            <td>Fast with better accuracy</td>
+        </tr>
+        <tr>
+            <td><strong>Training Time</strong></td>
+            <td>Moderate</td>
+            <td>Long</td>
+            <td>Moderate</td>
+            <td>Moderate with better convergence</td>
+        </tr>
+        <tr>
+            <td><strong>GPU Memory Usage</strong></td>
+            <td>Moderate</td>
+            <td>Very High</td>
+            <td>Low</td>
+            <td>Balanced</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Feature Representation Capabilities</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Feature Type</th>
+            <th>Pure CNN</th>
+            <th>Pure ViT</th>
+            <th>Pure SSM</th>
+            <th>Hybrid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Low-level Features (edges, textures)</strong></td>
+            <td>Excellent</td>
+            <td>Moderate (needs learning)</td>
+            <td>Moderate</td>
+            <td>Excellent (CNN component)</td>
+        </tr>
+        <tr>
+            <td><strong>Mid-level Features (parts, patterns)</strong></td>
+            <td>Very Good</td>
+            <td>Good</td>
+            <td>Good</td>
+            <td>Excellent</td>
+        </tr>
+        <tr>
+            <td><strong>High-level Semantics</strong></td>
+            <td>Good (with depth)</td>
+            <td>Excellent</td>
+            <td>Good</td>
+            <td>Excellent</td>
+        </tr>
+        <tr>
+            <td><strong>Spatial Relationships</strong></td>
+            <td>Limited by receptive field</td>
+            <td>Excellent (global)</td>
+            <td>Sequential</td>
+            <td>Excellent (multi-scale)</td>
+        </tr>
+        <tr>
+            <td><strong>Temporal Dynamics</strong></td>
+            <td>Limited (3D conv needed)</td>
+            <td>Moderate</td>
+            <td>Excellent</td>
+            <td>Excellent (SSM component)</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Practical Deployment Considerations</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Consideration</th>
+            <th>Pure CNN</th>
+            <th>Pure ViT</th>
+            <th>Pure SSM</th>
+            <th>Hybrid</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Edge Device Deployment</strong></td>
+            <td>Excellent (lightweight)</td>
+            <td>Poor (resource intensive)</td>
+            <td>Good (efficient)</td>
+            <td>Good (optimizable)</td>
+        </tr>
+        <tr>
+            <td><strong>Transfer Learning</strong></td>
+            <td>Good</td>
+            <td>Excellent</td>
+            <td>Moderate</td>
+            <td>Excellent (flexible adaptation)</td>
+        </tr>
+        <tr>
+            <td><strong>Fine-tuning Efficiency</strong></td>
+            <td>Fast</td>
+            <td>Slow (many parameters)</td>
+            <td>Moderate</td>
+            <td>Balanced</td>
+        </tr>
+        <tr>
+            <td><strong>Interpretability</strong></td>
+            <td>Good (visualizable filters)</td>
+            <td>Moderate (attention maps)</td>
+            <td>Challenging</td>
+            <td>Good (multiple views)</td>
+        </tr>
+        <tr>
+            <td><strong>Robustness to Adversarial Attacks</strong></td>
+            <td>Moderate</td>
+            <td>Moderate</td>
+            <td>Less studied</td>
+            <td>Enhanced (diverse representations)</td>
+        </tr>
+    </tbody>
+</table>
+</body>
+</html>
