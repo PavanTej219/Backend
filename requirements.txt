@@ -4,11 +4,11 @@ fastapi
 groq
 llama_index
 numpy
-opencv_python_headless
+opencv-python-headless
 Pillow
 pydantic
 python-dotenv
 qdrant_client
 requests
 uvicorn
-torch
+torch --index-url https://download.pytorch.org/whl/cpu
