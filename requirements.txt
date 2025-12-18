@@ -1,14 +1,39 @@
-beautifulsoup4
-easyocr
-fastapi
-groq
-llama-index
-numpy
-opencv-python-headless
-Pillow
-pydantic
-python-dotenv
-qdrant-client
-requests
-uvicorn
-torch
+# Core FastAPI
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.20
+pydantic==2.10.3
+python-dotenv==1.0.1
+
+# OCR - EasyOCR with minimal dependencies
+easyocr==1.7.2
+opencv-python-headless==4.10.0.84  # Headless version (smaller)
+torch==2.5.1  # Required by EasyOCR
+torchvision==0.20.1
+
+# Image processing
+Pillow==11.0.0
+numpy==1.26.4
+
+# Groq API
+groq==0.13.0
+
+# Vector DB
+qdrant-client==1.12.1
+
+# LlamaIndex with minimal dependencies
+llama-index-core==0.12.8
+llama-index-llms-groq==0.3.0
+llama-index-embeddings-huggingface==0.4.1
+llama-index-vector-stores-qdrant==0.4.2
+
+# Lightweight embeddings
+sentence-transformers==3.3.1
+transformers==4.46.3
+
+# HTTP requests (for doctor finder)
+requests==2.32.3
+beautifulsoup4==4.12.3
+
+# Utilities
+aiofiles==24.1.0
