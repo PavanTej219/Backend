@@ -9,7 +9,7 @@ python-dotenv==1.0.1
 easyocr==1.7.2
 opencv-python-headless==4.10.0.84  # Headless version (smaller)
 torch==2.5.1  # Required by EasyOCR
-torchvision==0.21.0  # Updated for Python 3.13 compatibility
+torchvision==0.20.1
 
 # Image processing
 Pillow==11.0.0
