@@ -1,5 +1,5 @@
 # Fixed requirements.txt for Vercel deployment
-# Numpy version conflict resolved
+# Compatible with uv package manager
 
 # Core framework
 fastapi==0.124.4
@@ -21,9 +21,9 @@ easyocr==1.7.2
 scikit-image==0.24.0
 scipy==1.14.1
 
-# PyTorch CPU-only (much smaller)
-torch==2.5.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
-torchvision==0.20.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+# PyTorch - Standard version (no CPU-only on Vercel)
+torch==2.5.1
+torchvision==0.20.1
 
 # LLM and Vector DB
 groq==0.37.1
