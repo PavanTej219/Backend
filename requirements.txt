@@ -1,14 +1,43 @@
-beautifulsoup4==4.14.3
-easyocr==1.7.2
+# Fixed requirements.txt for Vercel deployment
+# Numpy version conflict resolved
+
+# Core framework
 fastapi==0.124.4
-groq==0.37.1
-llama_index==0.14.10
-numpy==2.3.5
-opencv_python_headless==4.12.0.88
-Pillow==12.0.0
+uvicorn==0.38.0
 pydantic==2.12.5
 python-dotenv==1.2.1
-qdrant_client==1.16.2
+
+# Fixed numpy version - compatible with opencv
+numpy==2.2.1
+
+# OpenCV - headless version for serverless
+opencv-python-headless==4.10.0.84
+
+# Image processing
+Pillow==12.0.0
+
+# OCR - EasyOCR with specific versions
+easyocr==1.7.2
+scikit-image==0.24.0
+scipy==1.14.1
+
+# PyTorch CPU-only (much smaller)
+torch==2.5.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+torchvision==0.20.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+
+# LLM and Vector DB
+groq==0.37.1
+qdrant-client==1.16.2
+
+# LlamaIndex core
+llama-index-core==0.11.0
+llama-index-embeddings-huggingface==0.3.0
+llama-index-vector-stores-qdrant==0.4.0
+llama-index-llms-groq==0.2.0
+
+# Web scraping
 requests==2.32.5
-uvicorn==0.38.0
-torch==2.5.1
+beautifulsoup4==4.14.3
+
+# ASGI adapter for Vercel
+mangum==0.18.0
