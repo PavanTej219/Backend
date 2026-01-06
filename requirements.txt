@@ -1,44 +1,44 @@
 # Web Framework
-fastapi==0.115.5
-uvicorn[standard]==0.32.1
-python-multipart==0.0.18
+fastapi
+uvicorn[standard]
+python-multipart
 
 # Environment Variables
-python-dotenv==1.0.1
+python-dotenv
 
 # Data Validation
-pydantic==2.10.3
+pydantic
 
 # HTTP Clients
-requests==2.32.3
-httpx==0.28.1
+requests
+httpx
 
 # LlamaIndex Core
-llama-index-core==0.12.7
-llama-index-llms-groq==0.3.2
-llama-index-embeddings-huggingface==0.4.2
-llama-index-vector-stores-qdrant==0.4.3
+llama-index-core
+llama-index-llms-groq
+llama-index-embeddings-huggingface
+llama-index-vector-stores-qdrant
 
 # Vector Database
-qdrant-client==1.12.1
+qdrant-client
 
 # LLM API Client
-groq==0.13.1
+groq
 
 # Embeddings & NLP - CPU ONLY (smaller download, faster deployment)
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.5.1+cpu
-sentence-transformers==3.3.1
-transformers==4.47.1
-huggingface-hub==0.27.0
+torch
+sentence-transformers
+transformers
+huggingface-hub
 
 # Web Scraping
-beautifulsoup4==4.12.3
-lxml==5.3.0
+beautifulsoup4
+lxml
 
 # Utilities
-numpy==1.26.4
-pandas==2.2.3
+numpy
+pandas
 
 # Logging and Monitoring
-python-json-logger==3.2.1
+python-json-logger
