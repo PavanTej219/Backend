@@ -20,10 +20,6 @@ qdrant-client
 llama-index-core
 llama-index-llms-groq
 llama-index-vector-stores-qdrant
-llama-index-embeddings-huggingface
-
-# Reranking
-sentence-transformers
 
 # Web Scraping
 beautifulsoup4
