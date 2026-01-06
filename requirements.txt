@@ -10,7 +10,7 @@ python-dotenv
 # HTTP Requests
 requests
 
-# Groq API
+# Gemini API(via google studio)
 groq
 
 # Vector Database - Qdrant
