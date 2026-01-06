@@ -1,14 +1,33 @@
+# FastAPI Framework
 fastapi
-uvicorn
-python-multipart
+uvicorn[standard]
 pydantic
+python-multipart
+
+# Environment Variables
 python-dotenv
+
+# HTTP Requests
 requests
-beautifulsoup4
-qdrant-client
+
+# Groq API
 groq
-llama-index
-llama-index-vector-stores-qdrant
+
+# Vector Database - Qdrant
+qdrant-client
+
+# LlamaIndex Core
+llama-index-core
 llama-index-llms-groq
+llama-index-vector-stores-qdrant
+llama-index-embeddings-huggingface
+
+# Reranking
 sentence-transformers
+
+# Web Scraping
+beautifulsoup4
+lxml
+
+# Numerical Computing
 numpy
