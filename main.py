@@ -33,12 +33,10 @@ from llama_index.core.schema import Document
 from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.core.postprocessor import SentenceTransformerRerank
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.settings import Settings
 from llama_index.llms.groq import Groq as GroqLLM
 from llama_index.core.embeddings import BaseEmbedding
-from llama_index.core.base.embeddings.base import Embedding
 
 # Web scraping
 import requests
@@ -58,7 +56,7 @@ class Config:
     QDRANT_URL = os.getenv("QDRANT_URL")
     QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
     GOOGLE_VISION_API_KEY = os.getenv("GOOGLE_VISION_API_KEY")
-    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # New: OpenRouter API key
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
     COLLECTION_NAME = "medical_reports_db"
     UPLOAD_DIR = "temp_uploads"
     EMBEDDING_MODEL = "baai/bge-large-en-v1.5"
@@ -96,172 +94,88 @@ class Config:
 os.makedirs(Config.UPLOAD_DIR, exist_ok=True)
 
 # ================================
-
-# OPENROUTER EMBEDDING CLASS (FIXED)
-
+# OPENROUTER EMBEDDING CLASS
 # ================================
 
-
-
 class OpenRouterEmbedding(BaseEmbedding):
-
     """Custom embedding class using OpenRouter API"""
-
     
-
     # Configure Pydantic to allow extra fields
-
     model_config = ConfigDict(arbitrary_types_allowed=True, extra='allow')
-
     
-
     def __init__(
-
         self,
-
         api_key: str,
-
         model_name: str = "baai/bge-large-en-v1.5",
-
         **kwargs
-
     ):
-
         # Call parent init first
-
         super().__init__(**kwargs)
-
         
-
         # Now we can safely set our custom attributes
-
         self.api_key = api_key
-
         self.model_name = model_name
-
         self.api_url = "https://openrouter.ai/api/v1/embeddings"
-
         
-
     def _get_embedding(self, text: str) -> List[float]:
-
         """Get embedding for a single text"""
-
         try:
-
             headers = {
-
                 "Authorization": f"Bearer {self.api_key}",
-
                 "Content-Type": "application/json"
-
             }
-
             
-
             payload = {
-
                 "model": self.model_name,
-
                 "input": text
-
             }
-
             
-
             response = http_requests.post(
-
                 self.api_url,
-
                 headers=headers,
-
                 json=payload,
-
                 timeout=30
-
             )
-
             
-
             if response.status_code != 200:
-
                 raise Exception(f"OpenRouter API error: {response.status_code} - {response.text}")
-
             
-
             result = response.json()
-
             
-
             if "data" in result and len(result["data"]) > 0:
-
                 embedding = result["data"][0]["embedding"]
-
                 return embedding
-
             else:
-
                 raise Exception("No embedding returned from API")
-
                 
-
         except Exception as e:
-
             logger.error(f"Embedding error: {e}")
-
             raise
-
     
-
     def _get_query_embedding(self, query: str) -> List[float]:
-
         """Get embedding for query text"""
-
         return self._get_embedding(query)
-
     
-
     def _get_text_embedding(self, text: str) -> List[float]:
-
         """Get embedding for document text"""
-
         return self._get_embedding(text)
-
     
-
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-
         """Get embeddings for multiple texts"""
-
         embeddings = []
-
         for text in texts:
-
             embedding = self._get_embedding(text)
-
             embeddings.append(embedding)
-
             time.sleep(0.1)  # Rate limiting
-
         return embeddings
-
     
-
     async def _aget_query_embedding(self, query: str) -> List[float]:
-
         """Async version of get_query_embedding"""
-
         return self._get_query_embedding(query)
-
     
-
     async def _aget_text_embedding(self, text: str) -> List[float]:
-
         """Async version of get_text_embedding"""
-
         return self._get_text_embedding(text)
-
-
 
 # ================================
 # FASTAPI APP
@@ -675,7 +589,7 @@ class RAGSystem:
                 api_key=Config.QDRANT_API_KEY
             )
             
-            # Initialize OpenRouter embeddings instead of HuggingFace
+            # Initialize OpenRouter embeddings
             self.embed_model = OpenRouterEmbedding(
                 api_key=Config.OPENROUTER_API_KEY,
                 model_name=Config.EMBEDDING_MODEL
@@ -881,11 +795,6 @@ Only abnormal values. If none, return []."""
                 embed_model=self.embed_model
             )
             
-            rerank = SentenceTransformerRerank(
-                model="cross-encoder/ms-marco-MiniLM-L-2-v2",
-                top_n=5
-            )
-            
             template = """Context from medical reports:
 ---------------------
 {context_str}
@@ -905,10 +814,10 @@ Answer:"""
             
             qa_prompt = PromptTemplate(template)
             
+            # Query engine without reranking
             self.query_engine = index.as_query_engine(
                 llm=self.llm,
-                similarity_top_k=10,
-                node_postprocessors=[rerank]
+                similarity_top_k=10
             )
             self.query_engine.update_prompts({"response_synthesizer:text_qa_template": qa_prompt})
             
