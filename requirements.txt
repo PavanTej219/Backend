@@ -1,44 +1,14 @@
-# Web Framework
 fastapi
-uvicorn[standard]
+uvicorn
 python-multipart
-
-# Environment Variables
-python-dotenv
-
-# Data Validation
 pydantic
-
-# HTTP Clients
+python-dotenv
 requests
-httpx
-
-# LlamaIndex Core
-llama-index-core
-llama-index-llms-groq
-llama-index-embeddings-huggingface
-llama-index-vector-stores-qdrant
-
-# Vector Database
-qdrant-client
-
-# LLM API Client
-groq
-
-# Embeddings & NLP - CPU ONLY (smaller download, faster deployment)
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
-sentence-transformers
-transformers
-huggingface-hub
-
-# Web Scraping
 beautifulsoup4
-lxml
-
-# Utilities
+qdrant-client
+groq
+llama-index
+llama-index-vector-stores-qdrant
+llama-index-llms-groq
+sentence-transformers
 numpy
-pandas
-
-# Logging and Monitoring
-python-json-logger
