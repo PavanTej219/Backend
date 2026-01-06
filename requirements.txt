@@ -1,43 +1,44 @@
-# Fixed requirements.txt for Vercel deployment
-# Compatible with uv package manager
+# Web Framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.18
 
-# Core framework
-fastapi==0.124.4
-uvicorn==0.38.0
-pydantic==2.12.5
-python-dotenv==1.2.1
+# Environment Variables
+python-dotenv==1.0.1
 
-# Fixed numpy version - compatible with opencv
-numpy==2.2.1
+# Data Validation
+pydantic==2.10.3
 
-# OpenCV - headless version for serverless
-opencv-python-headless==4.10.0.84
+# HTTP Clients
+requests==2.32.3
+httpx==0.28.1
 
-# Image processing
-Pillow==12.0.0
+# LlamaIndex Core
+llama-index-core==0.12.7
+llama-index-llms-groq==0.3.2
+llama-index-embeddings-huggingface==0.4.2
+llama-index-vector-stores-qdrant==0.4.3
 
-# OCR - EasyOCR with specific versions
-easyocr==1.7.2
-scikit-image==0.24.0
-scipy==1.14.1
+# Vector Database
+qdrant-client==1.12.1
 
-# PyTorch - Standard version (no CPU-only on Vercel)
-torch==2.5.1
-torchvision==0.20.1
+# LLM API Client
+groq==0.13.1
 
-# LLM and Vector DB
-groq==0.37.1
-qdrant-client==1.16.2
+# Embeddings & NLP - CPU ONLY (smaller download, faster deployment)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1+cpu
+sentence-transformers==3.3.1
+transformers==4.47.1
+huggingface-hub==0.27.0
 
-# LlamaIndex core
-llama-index-core==0.11.0
-llama-index-embeddings-huggingface==0.3.0
-llama-index-vector-stores-qdrant==0.4.0
-llama-index-llms-groq==0.2.0
+# Web Scraping
+beautifulsoup4==4.12.3
+lxml==5.3.0
 
-# Web scraping
-requests==2.32.5
-beautifulsoup4==4.14.3
+# Utilities
+numpy==1.26.4
+pandas==2.2.3
 
-# ASGI adapter for Vercel
-mangum==0.18.0
+# Logging and Monitoring
+python-json-logger==3.2.1
