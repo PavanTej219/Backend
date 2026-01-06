@@ -1,4 +1,4 @@
-# MediExtract Backend
+# MedAnalyze Backend
 
 A FastAPI-based medical report processing system with OCR, RAG (Retrieval-Augmented Generation), and doctor consultation features.
 
