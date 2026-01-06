@@ -1,11 +1,11 @@
 """
-MediExtract FastAPI Backend with Google Cloud Vision API (API Key Authentication)
+MediExtract FastAPI Backend with Google Cloud Vision API and OpenRouter Embeddings
 Medical Report Processing, RAG System, and Doctor Consultation
 """
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
 import os
@@ -16,6 +16,7 @@ from datetime import datetime
 import logging
 from dotenv import load_dotenv
 import base64
+import numpy as np
 
 load_dotenv()
 
@@ -25,17 +26,19 @@ import requests as http_requests
 # Core imports
 import qdrant_client
 from groq import Groq
+from qdrant_client.models import Distance, VectorParams, PointStruct
 
 # LlamaIndex imports
 from llama_index.core.schema import Document
 from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.postprocessor import SentenceTransformerRerank
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.settings import Settings
 from llama_index.llms.groq import Groq as GroqLLM
+from llama_index.core.embeddings import BaseEmbedding
+from llama_index.core.base.embeddings.base import Embedding
 
 # Web scraping
 import requests
@@ -54,9 +57,12 @@ class Config:
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
     QDRANT_URL = os.getenv("QDRANT_URL")
     QDRANT_API_KEY = os.getenv("QDRANT_API_KEY")
-    GOOGLE_VISION_API_KEY = os.getenv("GOOGLE_VISION_API_KEY")  # Just the API key
+    GOOGLE_VISION_API_KEY = os.getenv("GOOGLE_VISION_API_KEY")
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # New: OpenRouter API key
     COLLECTION_NAME = "medical_reports_db"
     UPLOAD_DIR = "temp_uploads"
+    EMBEDDING_MODEL = "baai/bge-large-en-v1.5"
+    EMBEDDING_DIMENSION = 1024  # BGE-large dimension
     
     NORMAL_RANGES = {
         'hemoglobin': {'specialty': 'Hematologist'},
@@ -81,6 +87,8 @@ class Config:
             missing.append("QDRANT_API_KEY")
         if not cls.GOOGLE_VISION_API_KEY:
             missing.append("GOOGLE_VISION_API_KEY")
+        if not cls.OPENROUTER_API_KEY:
+            missing.append("OPENROUTER_API_KEY")
         
         if missing:
             raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
@@ -88,13 +96,181 @@ class Config:
 os.makedirs(Config.UPLOAD_DIR, exist_ok=True)
 
 # ================================
+
+# OPENROUTER EMBEDDING CLASS (FIXED)
+
+# ================================
+
+
+
+class OpenRouterEmbedding(BaseEmbedding):
+
+    """Custom embedding class using OpenRouter API"""
+
+    
+
+    # Configure Pydantic to allow extra fields
+
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra='allow')
+
+    
+
+    def __init__(
+
+        self,
+
+        api_key: str,
+
+        model_name: str = "baai/bge-large-en-v1.5",
+
+        **kwargs
+
+    ):
+
+        # Call parent init first
+
+        super().__init__(**kwargs)
+
+        
+
+        # Now we can safely set our custom attributes
+
+        self.api_key = api_key
+
+        self.model_name = model_name
+
+        self.api_url = "https://openrouter.ai/api/v1/embeddings"
+
+        
+
+    def _get_embedding(self, text: str) -> List[float]:
+
+        """Get embedding for a single text"""
+
+        try:
+
+            headers = {
+
+                "Authorization": f"Bearer {self.api_key}",
+
+                "Content-Type": "application/json"
+
+            }
+
+            
+
+            payload = {
+
+                "model": self.model_name,
+
+                "input": text
+
+            }
+
+            
+
+            response = http_requests.post(
+
+                self.api_url,
+
+                headers=headers,
+
+                json=payload,
+
+                timeout=30
+
+            )
+
+            
+
+            if response.status_code != 200:
+
+                raise Exception(f"OpenRouter API error: {response.status_code} - {response.text}")
+
+            
+
+            result = response.json()
+
+            
+
+            if "data" in result and len(result["data"]) > 0:
+
+                embedding = result["data"][0]["embedding"]
+
+                return embedding
+
+            else:
+
+                raise Exception("No embedding returned from API")
+
+                
+
+        except Exception as e:
+
+            logger.error(f"Embedding error: {e}")
+
+            raise
+
+    
+
+    def _get_query_embedding(self, query: str) -> List[float]:
+
+        """Get embedding for query text"""
+
+        return self._get_embedding(query)
+
+    
+
+    def _get_text_embedding(self, text: str) -> List[float]:
+
+        """Get embedding for document text"""
+
+        return self._get_embedding(text)
+
+    
+
+    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+
+        """Get embeddings for multiple texts"""
+
+        embeddings = []
+
+        for text in texts:
+
+            embedding = self._get_embedding(text)
+
+            embeddings.append(embedding)
+
+            time.sleep(0.1)  # Rate limiting
+
+        return embeddings
+
+    
+
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+
+        """Async version of get_query_embedding"""
+
+        return self._get_query_embedding(query)
+
+    
+
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+
+        """Async version of get_text_embedding"""
+
+        return self._get_text_embedding(text)
+
+
+
+# ================================
 # FASTAPI APP
 # ================================
 
 app = FastAPI(
-    title="MediExtract API with Google Vision",
-    description="Medical Report Processing with Google Cloud Vision API",
-    version="3.0.0"
+    title="MediExtract API with Google Vision & OpenRouter",
+    description="Medical Report Processing with Google Cloud Vision API and OpenRouter Embeddings",
+    version="4.0.0"
 )
 
 app.add_middleware(
@@ -480,7 +656,7 @@ Return only valid JSON."""
             }
 
 # ================================
-# RAG SYSTEM
+# RAG SYSTEM WITH OPENROUTER EMBEDDINGS
 # ================================
 
 class RAGSystem:
@@ -499,9 +675,10 @@ class RAGSystem:
                 api_key=Config.QDRANT_API_KEY
             )
             
-            self.embed_model = HuggingFaceEmbedding(
-                model_name="BAAI/bge-large-en-v1.5",
-                trust_remote_code=True
+            # Initialize OpenRouter embeddings instead of HuggingFace
+            self.embed_model = OpenRouterEmbedding(
+                api_key=Config.OPENROUTER_API_KEY,
+                model_name=Config.EMBEDDING_MODEL
             )
             
             self.llm = GroqLLM(
@@ -516,7 +693,7 @@ class RAGSystem:
             Settings.embed_model = self.embed_model
             Settings.llm = self.llm
             
-            logger.info("RAG system initialized")
+            logger.info("RAG system initialized with OpenRouter embeddings")
             
         except Exception as e:
             logger.error(f"RAG initialization error: {e}")
@@ -658,12 +835,24 @@ Only abnormal values. If none, return []."""
             except:
                 pass
             
+            # Create collection with proper vector configuration
+            self.client.create_collection(
+                collection_name=Config.COLLECTION_NAME,
+                vectors_config=VectorParams(
+                    size=Config.EMBEDDING_DIMENSION,
+                    distance=Distance.COSINE
+                )
+            )
+            
+            # Create vector store
             vector_store = QdrantVectorStore(
                 client=self.client,
                 collection_name=Config.COLLECTION_NAME
             )
             storage_context = StorageContext.from_defaults(vector_store=vector_store)
             
+            # Index documents with OpenRouter embeddings
+            logger.info(f"Indexing {len(documents)} documents with OpenRouter embeddings...")
             VectorStoreIndex.from_documents(
                 documents,
                 storage_context=storage_context,
@@ -671,7 +860,7 @@ Only abnormal values. If none, return []."""
                 show_progress=False
             )
             
-            logger.info(f"Indexed {len(documents)} documents")
+            logger.info(f"Successfully indexed {len(documents)} documents")
             self._init_query_engine()
             
             return True, f"Successfully indexed {len(documents)} reports"
@@ -842,7 +1031,7 @@ async def lifespan(app: FastAPI):
         ocr_processor = MedicalReportOCR()
         rag_system = RAGSystem()
         doctor_finder = DoctorFinder()
-        logger.info("All components initialized")
+        logger.info("All components initialized with OpenRouter embeddings")
         yield
     except Exception as e:
         logger.error(f"Startup error: {e}")
@@ -857,9 +1046,10 @@ app.router.lifespan_context = lifespan
 @app.get("/")
 async def root():
     return {
-        "message": "MediExtract API with Google Vision",
-        "version": "3.0.0",
-        "status": "running"
+        "message": "MediExtract API with Google Vision & OpenRouter",
+        "version": "4.0.0",
+        "status": "running",
+        "embedding_provider": "OpenRouter (baai/bge-large-en-v1.5)"
     }
 
 @app.get("/api/health")
@@ -868,7 +1058,8 @@ async def health_check():
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "ocr_ready": ocr_processor is not None,
-        "rag_ready": rag_system is not None
+        "rag_ready": rag_system is not None,
+        "embedding_model": Config.EMBEDDING_MODEL
     }
 
 @app.get("/api/database/status", response_model=DatabaseStatus)
