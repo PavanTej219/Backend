@@ -28,3 +28,6 @@ lxml
 # Numerical Computing
 numpy
 matplotlib
+# PDF Processing
+PyPDF2
+PyMuPDF
