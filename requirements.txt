@@ -27,3 +27,4 @@ lxml
 
 # Numerical Computing
 numpy
+matplotlib
