@@ -17,6 +17,10 @@ import logging
 from dotenv import load_dotenv
 import base64
 import numpy as np
+import matplotlib.pyplot as plt
+import io
+import PyPDF2
+import fitz
 
 load_dotenv()
 
@@ -387,6 +391,36 @@ class MedicalReportOCR:
             logger.error(f"Initialization error: {e}")
             raise
     
+    def convert_pdf_to_images(self, pdf_path: str) -> List[str]:
+        """Convert PDF to images using PyMuPDF (no system dependencies)"""
+        try:
+            # Open PDF
+            pdf_document = fitz.open(pdf_path)
+            temp_image_paths = []
+            
+            # Convert each page to image
+            for page_num in range(len(pdf_document)):
+                page = pdf_document[page_num]
+                
+                # Render page to image (higher resolution for better OCR)
+                mat = fitz.Matrix(300/72, 300/72)  # 300 DPI
+                pix = page.get_pixmap(matrix=mat)
+                
+                # Save as JPEG
+                temp_image_path = os.path.join(
+                    Config.UPLOAD_DIR, 
+                    f"pdf_page_{page_num}_{datetime.now().timestamp()}.jpg"
+                )
+                pix.save(temp_image_path)
+                temp_image_paths.append(temp_image_path)
+            
+            pdf_document.close()
+            logger.info(f"Converted PDF to {len(temp_image_paths)} images using PyMuPDF")
+            return temp_image_paths
+            
+        except Exception as e:
+            logger.error(f"PDF conversion error: {e}")
+            raise
     def extract_text(self, image_path: str) -> str:
         """Extract text using Google Vision REST API with API key"""
         try:
@@ -531,36 +565,91 @@ Return only valid JSON."""
             logger.error(f"Groq processing error: {e}")
             return {'success': False, 'error': str(e)}
     
-    def process_image(self, image_path: str):
-        image_filename = os.path.basename(image_path)
+    def process_image(self, file_path: str):
+        image_filename = os.path.basename(file_path)
         
         try:
-            extracted_text = self.extract_text(image_path)
-            
-            if not extracted_text.strip():
-                return {
-                    'success': False,
-                    'error': 'No text found in image',
-                    'image_filename': image_filename
+            # Check if file is PDF
+            if file_path.lower().endswith('.pdf'):
+                # Convert PDF to images
+                image_paths = self.convert_pdf_to_images(file_path)
+                
+                # Process all pages
+                all_extracted_text = []
+                all_json_data = []
+                
+                for img_path in image_paths:
+                    try:
+                        extracted_text = self.extract_text(img_path)
+                        if extracted_text.strip():
+                            all_extracted_text.append(extracted_text)
+                            
+                            groq_result = self.generate_json_with_groq(
+                                extracted_text, 
+                                f"{image_filename}_page_{len(all_json_data)+1}"
+                            )
+                            
+                            if groq_result['success']:
+                                all_json_data.append(groq_result['json_data'])
+                    finally:
+                        # Clean up temporary image
+                        if os.path.exists(img_path):
+                            os.unlink(img_path)
+                
+                # Combine results from all pages
+                combined_text = "\n\n--- PAGE BREAK ---\n\n".join(all_extracted_text)
+                
+                # Use the first page's structured data or merge if needed
+                primary_json = all_json_data[0] if all_json_data else {
+                    "hospital_info": {"hospital_name": None, "address": None},
+                    "patient_info": {"name": None, "age": None, "gender": None},
+                    "doctor_info": {"referring_doctor": None},
+                    "report_info": {"report_type": "Medical Report", "report_date": None},
+                    "test_results": []
                 }
-            
-            groq_result = self.generate_json_with_groq(extracted_text, image_filename)
-            
-            if groq_result['success']:
+                
+                # Merge test results from all pages
+                if len(all_json_data) > 1:
+                    for json_data in all_json_data[1:]:
+                        primary_json['test_results'].extend(
+                            json_data.get('test_results', [])
+                        )
+                
                 return {
                     'success': True,
                     'image_filename': image_filename,
-                    'extracted_text': extracted_text,
-                    'structured_json': groq_result['json_data']
+                    'extracted_text': combined_text,
+                    'structured_json': primary_json
                 }
+            
             else:
-                return {
-                    'success': False,
-                    'error': groq_result['error'],
-                    'image_filename': image_filename,
-                    'extracted_text': extracted_text[:500]
-                }
+                # Original image processing logic
+                extracted_text = self.extract_text(file_path)
                 
+                if not extracted_text.strip():
+                    return {
+                        'success': False,
+                        'error': 'No text found in image',
+                        'image_filename': image_filename
+                    }
+                
+                groq_result = self.generate_json_with_groq(extracted_text, image_filename)
+                
+                if groq_result['success']:
+                    return {
+                        'success': True,
+                        'image_filename': image_filename,
+                        'extracted_text': extracted_text,
+                        'structured_json': groq_result['json_data']
+                    }
+                else:
+                    return {
+                        'success': False,
+                        'error': groq_result['error'],
+                        'image_filename': image_filename,
+                        'extracted_text': extracted_text[:500]
+                    }
+                    
         except Exception as e:
             logger.error(f"Processing error: {e}")
             return {
@@ -568,7 +657,6 @@ Return only valid JSON."""
                 'error': str(e),
                 'image_filename': image_filename
             }
-
 # ================================
 # RAG SYSTEM WITH OPENROUTER EMBEDDINGS
 # ================================
@@ -803,10 +891,14 @@ Only abnormal values. If none, return []."""
 Answer questions about the medical reports based on the context above.
 
 Instructions:
-1. Be specific and cite actual values
-2. Include test name, value, unit, reference range
-3. If information is not available, state clearly
-4. Use bullet points for multiple results
+1. For test results: Include test name, value, unit, reference range
+2. For abnormal values: Explain what it means and suggestions to improve
+3. For dietary questions: Provide specific foods to eat and avoid
+4. For lifestyle: Give practical recommendations (exercise, sleep, stress management)
+5. For report comments: Cite the exact comments mentioned in the report
+6. Be specific, practical, and evidence-based
+7. If information is unavailable, state clearly
+8. Use bullet points for clarity
 
 Question: {query_str}
 
@@ -922,6 +1014,71 @@ Format:
         except Exception as e:
             logger.error(f"Database status error: {e}")
             return {'exists': False, 'count': 0}
+    def generate_visualizations(self, processed_reports: List[dict]) -> Dict[str, Any]:
+        """Generate visualization data from processed reports"""
+        visualizations = []
+        
+        for report in processed_reports:
+            if not report.get('success'):
+                continue
+                
+            try:
+                json_data = report['structured_json']
+                test_results = json_data.get('test_results', [])
+                patient_name = json_data.get('patient_info', {}).get('name', 'Unknown')
+                
+                if not test_results:
+                    continue
+                
+                # Prepare data for visualization
+                test_names = []
+                test_values = []
+                normal_ranges = []
+                
+                for test in test_results:
+                    if isinstance(test, dict) and test.get('test_name') and test.get('result_value'):
+                        # Extract numeric value
+                        try:
+                            value_str = str(test['result_value']).strip()
+                            # Remove units and extract number
+                            numeric_value = float(''.join(filter(lambda x: x.isdigit() or x == '.', value_str.split()[0])))
+                            
+                            test_names.append(test['test_name'])
+                            test_values.append(numeric_value)
+                            
+                            # Try to extract normal range midpoint
+                            ref_range = test.get('reference_range', '')
+                            if ref_range and '-' in ref_range:
+                                range_parts = ref_range.split('-')
+                                if len(range_parts) == 2:
+                                    try:
+                                        low = float(''.join(filter(lambda x: x.isdigit() or x == '.', range_parts[0])))
+                                        high = float(''.join(filter(lambda x: x.isdigit() or x == '.', range_parts[1])))
+                                        normal_ranges.append((low + high) / 2)
+                                    except:
+                                        normal_ranges.append(None)
+                                else:
+                                    normal_ranges.append(None)
+                            else:
+                                normal_ranges.append(None)
+                        except:
+                            continue
+                
+                if test_names and test_values:
+                    visualizations.append({
+                        'patient_name': patient_name,
+                        'report_filename': report['image_filename'],
+                        'test_names': test_names,
+                        'test_values': test_values,
+                        'normal_ranges': normal_ranges,
+                        'report_date': json_data.get('report_info', {}).get('report_date', 'Unknown')
+                    })
+                    
+            except Exception as e:
+                logger.error(f"Visualization generation error: {e}")
+                continue
+        
+        return {'visualizations': visualizations}
 
 # ================================
 # GLOBAL INSTANCES
@@ -988,7 +1145,8 @@ async def process_reports(files: List[UploadFile] = File(...)):
     for file in files:
         temp_path = None
         try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg', dir=Config.UPLOAD_DIR) as tmp:
+            file_suffix = '.pdf' if file.content_type == 'application/pdf' else '.jpg'
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_suffix, dir=Config.UPLOAD_DIR) as tmp:
                 shutil.copyfileobj(file.file, tmp)
                 temp_path = tmp.name
             
@@ -1012,12 +1170,15 @@ async def process_reports(files: List[UploadFile] = File(...)):
     if successful_reports:
         rag_system.setup_database(processed_reports)
     
+    viz_data = rag_system.generate_visualizations(processed_reports)
+    
     return {
         "success": len(successful_reports) > 0,
         "total_count": len(processed_reports),
         "successful_count": len(successful_reports),
         "failed_count": len(processed_reports) - len(successful_reports),
-        "results": processed_reports
+        "results": processed_reports,
+        "visualizations": viz_data.get('visualizations', [])
     }
 
 @app.post("/api/query", response_model=QueryResponse)
@@ -1074,5 +1235,5 @@ async def find_doctors(request: DoctorSearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
