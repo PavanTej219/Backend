@@ -9,6 +9,10 @@ python-dotenv
 
 # HTTP Requests
 requests
+# Gmeminilms
+llama-index-llms-gemini
+# Google Generative AI
+google-generativeai
 
 # Gemini API(via google studio)
 groq
